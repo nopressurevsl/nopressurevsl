@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NOPRESSURE — Motion Portfolio</title>
+<meta name="description" content="NOPRESSURE — motion, 3D and visual portfolio.">
+<style>
+:root{--bg:#050505;--fg:#f5f5f5;--muted:#8b8b8b;--line:#202020}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg);font-family:Arial,Helvetica,sans-serif}
+body{overflow-x:hidden}button{font:inherit;color:inherit}
+header{height:82px;display:flex;align-items:center;justify-content:space-between;padding:0 5vw;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(5,5,5,.86);backdrop-filter:blur(18px);z-index:10}
+.logo{font-size:18px;font-weight:800;letter-spacing:.18em}.status{font-size:11px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+.hero{min-height:58vh;padding:12vh 5vw 8vh;display:flex;flex-direction:column;justify-content:flex-end}
+.kicker{font-size:11px;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;margin-bottom:28px}
+h1{font-size:clamp(60px,13vw,190px);line-height:.78;letter-spacing:-.075em;margin:0;font-weight:800}
+.intro{max-width:570px;margin-top:42px;color:#aaa;font-size:15px;line-height:1.65}
+.gallery{padding:2vw 5vw 10vw;display:grid;grid-template-columns:repeat(12,1fr);gap:18px}
+.card{grid-column:span 6;position:relative;aspect-ratio:16/10;background:#111;border:1px solid #1d1d1d;overflow:hidden;cursor:pointer}
+.card:nth-child(3n){grid-column:span 8}.card:nth-child(4n){grid-column:span 4}
+.card img,.card video{width:100%;height:100%;object-fit:cover;display:block;transition:transform .8s cubic-bezier(.2,.7,.2,1);opacity:.9}
+.card:hover img,.card:hover video{transform:scale(1.045);opacity:1}
+.card:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(0,0,0,.72));pointer-events:none}
+.meta{position:absolute;z-index:2;left:22px;right:22px;bottom:20px;display:flex;justify-content:space-between;align-items:end}
+.title{font-size:18px;font-weight:700}.num{font-size:10px;color:#aaa;letter-spacing:.15em}
+.empty{grid-column:1/-1;border:1px dashed #292929;padding:70px 30px;text-align:center;color:#777;line-height:1.6}
+footer{border-top:1px solid var(--line);padding:35px 5vw 50px;display:flex;justify-content:space-between;color:#777;font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+#viewer{position:fixed;inset:0;background:rgba(0,0,0,.96);z-index:50;display:none;align-items:center;justify-content:center;opacity:0}
+#viewer.open{display:flex;animation:fadeIn .28s forwards}
+@keyframes fadeIn{to{opacity:1}}
+#stage{width:min(92vw,1400px);height:88vh;display:flex;align-items:center;justify-content:center;position:relative}
+#stage video{max-width:100%;max-height:100%;outline:none}
+.close,.nav{position:fixed;border:1px solid #333;background:#101010cc;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;cursor:pointer;z-index:60}
+.close{right:25px;top:22px;font-size:23px}.nav{top:50%;transform:translateY(-50%);font-size:25px}.prev{left:22px}.next{right:22px}
+.counter{position:fixed;left:50%;bottom:25px;transform:translateX(-50%);font-size:10px;color:#777;letter-spacing:.2em}
+.hint{position:fixed;bottom:25px;right:28px;color:#555;font-size:10px;letter-spacing:.12em}
+@media(max-width:700px){
+header{height:65px;padding:0 20px}.hero{padding:9vh 20px 7vh;min-height:48vh}.gallery{padding:0 20px 70px;display:block}
+.card,.card:nth-child(3n),.card:nth-child(4n){margin-bottom:14px;aspect-ratio:16/10}.intro{font-size:14px;margin-top:30px}
+.nav{width:42px;height:42px}.prev{left:10px}.next{right:10px}.close{right:14px;top:14px}
+footer{padding:28px 20px;display:block}.status{display:none}
+}
+</style>
+</head>
+<body>
+<header><div class="logo">NOPRESSURE</div><div class="status">Motion / 3D / Visual</div></header>
+<section class="hero">
+<div class="kicker">Independent Motion Portfolio — 2026</div>
+<h1>NO<br>PRESSURE.</h1>
+<p class="intro">A curated collection of motion, 3D and visual experiments. Replace the sample projects below with your own videos from the NOPRESSURE Drive folder.</p>
+</section>
+<main class="gallery" id="gallery"></main>
+<footer><span>© 2026 NOPRESSURE</span><span>Motion Portfolio</span></footer>
+
+<div id="viewer" aria-hidden="true">
+<button class="close" id="close">×</button>
+<button class="nav prev" id="prev">‹</button>
+<div id="stage"></div>
+<button class="nav next" id="next">›</button>
+<div class="counter" id="counter"></div>
+<div class="hint">SWIPE / ← → / ESC</div>
+</div>
+
+<script>
+/*
+  NOPRESSURE PORTFOLIO
+  Put your videos in /videos and edit the projects array below.
+  For each item, "src" is the video path and "poster" is an optional thumbnail.
+*/
+const projects = [
+  // Example:
+  // {title:"Project 01", src:"videos/project-01.mp4", poster:"images/project-01.jpg"},
+  // {title:"Project 02", src:"videos/project-02.mp4", poster:"images/project-02.jpg"},
+];
+
+const gallery=document.getElementById('gallery');
+const viewer=document.getElementById('viewer');
+const stage=document.getElementById('stage');
+const counter=document.getElementById('counter');
+let current=0, startX=0;
+
+function render(){
+  gallery.innerHTML='';
+  if(!projects.length){
+    gallery.innerHTML='<div class="empty"><strong>YOUR MOTION WORKS</strong><br><br>Add your MP4 files to <b>/videos</b>, then add them to the <b>projects</b> array in <b>index.html</b>.<br>The fullscreen popup, arrows, keyboard navigation and mobile swipe are already built in.</div>';
+    return;
+  }
+  projects.forEach((p,i)=>{
+    const card=document.createElement('article'); card.className='card';
+    const media=document.createElement('video'); media.src=p.src; media.muted=true; media.loop=true; media.playsInline=true; media.preload='metadata';
+    if(p.poster) media.poster=p.poster;
+    card.appendChild(media);
+    card.innerHTML += `<div class="meta"><div class="title">${p.title}</div><div class="num">${String(i+1).padStart(2,'0')}</div></div>`;
+    card.onclick=()=>openViewer(i);
+    card.onmouseenter=()=>media.play().catch(()=>{});
+    card.onmouseleave=()=>{media.pause();media.currentTime=0};
+    gallery.appendChild(card);
+  });
+}
+function openViewer(i){
+ current=(i+projects.length)%projects.length;
+ stage.innerHTML='';
+ const v=document.createElement('video');
+ v.src=projects[current].src; v.controls=true; v.autoplay=true; v.playsInline=true;
+ if(projects[current].poster)v.poster=projects[current].poster;
+ stage.appendChild(v);
+ counter.textContent=`${String(current+1).padStart(2,'0')} / ${String(projects.length).padStart(2,'0')}`;
+ viewer.classList.add('open');viewer.setAttribute('aria-hidden','false');
+}
+function closeViewer(){viewer.classList.remove('open');viewer.setAttribute('aria-hidden','true');stage.innerHTML=''}
+function move(n){if(projects.length)openViewer(current+n)}
+document.getElementById('close').onclick=closeViewer;
+document.getElementById('prev').onclick=()=>move(-1);
+document.getElementById('next').onclick=()=>move(1);
+document.addEventListener('keydown',e=>{
+ if(!viewer.classList.contains('open'))return;
+ if(e.key==='Escape')closeViewer(); if(e.key==='ArrowLeft')move(-1); if(e.key==='ArrowRight')move(1);
+});
+viewer.addEventListener('click',e=>{if(e.target===viewer)closeViewer()});
+viewer.addEventListener('touchstart',e=>startX=e.changedTouches[0].clientX,{passive:true});
+viewer.addEventListener('touchend',e=>{
+ const dx=e.changedTouches[0].clientX-startX;
+ if(Math.abs(dx)>60)move(dx<0?1:-1);
+},{passive:true});
+render();
+</script>
+</body>
+</html>
